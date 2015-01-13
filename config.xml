@@ -2,11 +2,11 @@
 <!DOCTYPE server-config SYSTEM "http://webcourse.cs.technion.ac.il/236369/Winter2014-2015/ho/WCFiles/config.dtd">
 <server-config>
 	<simple-filters>
-		<simple-filter class="il.technion.cs236369.webserver.simplefilter.CompressionSimpleFilter">
+		<!--  <simple-filter class="il.technion.cs236369.webserver.simplefilter.CompressionSimpleFilter">
 			<url-pattern>*.html</url-pattern>
 			<url-pattern>*.js</url-pattern>
 			<url-pattern>*.css</url-pattern>
-		</simple-filter>
+		</simple-filter> -->
 	</simple-filters>
 	<welcome-file>index.html</welcome-file>
 	<mime>
