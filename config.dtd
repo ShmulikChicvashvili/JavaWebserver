@@ -1,0 +1,15 @@
+<!ELEMENT server-config (simple-filters,welcome-file?,mime)>
+
+
+<!ELEMENT simple-filters (simple-filter*)>
+<!ELEMENT simple-filter (url-pattern+)>
+<!ATTLIST simple-filter class CDATA #REQUIRED>
+
+<!ELEMENT url-pattern (#PCDATA)>
+<!ELEMENT extension (#PCDATA)>
+
+<!ELEMENT welcome-file (#PCDATA)>
+
+<!ELEMENT mime (mime-mapping*)>
+<!ELEMENT mime-mapping (extension,mime-type)>
+<!ELEMENT mime-type (#PCDATA)>

@@ -1,0 +1,7 @@
+httpserver.net.port = 8080
+httpserver.app.baseDir = c:\\hw4\\serverBase
+httpserver.threads.numSocketReaders = 3
+httpserver.threads.numRequestHandlers = 7
+httpserver.queues.sizeSocketQueue = 100
+httpserver.queues.sizeRequestQueue = 200
+httpserver.session.timeout = 300000

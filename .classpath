@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="il/technion/cs236369/webserver/Cache.java|il/technion/cs236369/webserver/HttpProxyTestBasicCacheControl.java|il/technion/cs236369/webserver/HttpProxyTestBasicNonCacheable1.java|il/technion/cs236369/webserver/HttpProxyTestBasicNonCacheable2.java|il/technion/cs236369/webserver/HttpProxyTestBasicNonCacheable3.java|il/technion/cs236369/webserver/HttpProxyTestBasicValidation.java|il/technion/cs236369/webserver/HttpProxyTestServerNotFound.java|il/technion/cs236369/webserver/HttpProxyTestValidationWithFreshResponse.java|il/technion/cs236369/webserver/HttpProxyTestValidationWithNonCachableResponse.java" kind="src" path="test"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/guice-3.0-no_aop.jar"/>
+	<classpathentry kind="lib" path="lib/javax.inject.jar"/>
+	<classpathentry kind="lib" path="lib/mockito-all-1.9.0.jar"/>
+	<classpathentry kind="lib" path="lib/BasicTest.jar"/>
+	<classpathentry kind="lib" path="lib/httpcore-4.3.3.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
