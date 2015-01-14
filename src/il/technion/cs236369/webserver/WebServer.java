@@ -42,6 +42,7 @@ public class WebServer extends AbstractWebServer {
 		super(srvSockFactory, port, baseDir, numSocketReaders,
 				numRequestHandlers, sizeSocketQueue, sizeRequestQueue,
 				sessionTimeout);
+
 		XMLParser parser = null;
 		try {
 			parser = new XMLParser();
@@ -49,8 +50,13 @@ public class WebServer extends AbstractWebServer {
 			WebServerLog.log(this, "XML Parser has thrown an exception");
 			e.printStackTrace();
 		}
+		System.out.println("HASDASODP");
 		this.extension2ContentType = parser.getMimeTypes();
+		System.out.println("HASDASODP");
+
 		this.filters = parser.getFilterWrappers();
+		System.out.println("HASDASODP");
+
 
 		socketsQueue = new LinkedBlockingQueue<>(sizeSocketQueue);
 		requestsQueue = new LinkedBlockingQueue<>(sizeRequestQueue);
@@ -72,11 +78,13 @@ public class WebServer extends AbstractWebServer {
 
 	@Override
 	public void bind() throws IOException {
+		WebServerLog.log(this, "Server is binding");
 		serverSocket = srvSockFactory.createServerSocket(port);
 	}
 
 	@Override
 	public void start() {
+		WebServerLog.log(this, "Server has started");
 		for (SocketReader reader : socketReaders) {
 			reader.start();
 		}

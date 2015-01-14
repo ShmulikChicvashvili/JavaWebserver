@@ -18,6 +18,7 @@ import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.message.BasicHttpResponse;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpProcessorBuilder;
@@ -44,9 +45,15 @@ public class RequestHandler extends Thread {
 				RequestObject reqObj = requestsQueue.take();
 				WebServerLog.log(this, "Request handler got a new request");
 
-				handleRequest(reqObj);
+//				handleRequest(reqObj);
+
+				reqObj.getConn().shutdown();
 			} catch (InterruptedException e) {
 				WebServerLog.log(this, "Socket reader was interrupted");
+				e.printStackTrace();
+			} catch (IOException e) {
+				WebServerLog.log(this,
+						"Socket reader failed to close connection");
 				e.printStackTrace();
 			}
 		}
@@ -56,11 +63,12 @@ public class RequestHandler extends Thread {
 	private void handleRequest(RequestObject reqObj) {
 		HttpServerConnection conn = reqObj.getConn();
 		HttpRequest req = reqObj.getRequest();
-		WebServerLog.log(this, "Request handler got a request:");
-		WebServerLog.log(this, req.toString());
+		WebServerLog.log(this,
+				"Request handler got a request:\n" + req.toString());
 
 		HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1,
 				HttpStatus.SC_OK, ReasonPhrases.OK);
+
 		final HttpProcessor proc = HttpProcessorBuilder.create()
 				.add(new ResponseContent()).add(new HttpResponseInterceptor() {
 
@@ -74,9 +82,16 @@ public class RequestHandler extends Thread {
 						response.addHeader(HttpHeaders.CONNECTION, "close");
 					}
 				}).build();
+		try {
+			proc.process(response, new BasicHttpContext());
+		} catch (HttpException | IOException e1) {
+			WebServerLog.log(this,
+					"Request handler failed to 'process' response");
+			e1.printStackTrace();
+		}
 
-		WebServerLog.log(this, "Request handler is sending a response:");
-		WebServerLog.log(this, response.toString());
+		WebServerLog.log(this, "Request handler is sending a response:\n"
+				+ response.toString());
 
 		try {
 			conn.sendResponseEntity(response);
