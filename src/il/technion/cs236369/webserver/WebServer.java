@@ -1,11 +1,21 @@
 package il.technion.cs236369.webserver;
 
+import il.technion.cs236369.webserver.simplefilter.SimpleFilterWrapper;
+
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.net.ServerSocketFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -13,10 +23,6 @@ import com.google.inject.Injector;
 import com.google.inject.name.Named;
 
 public class WebServer extends AbstractWebServer {
-
-	Map<String, String> extension2ContentType;
-
-	protected String welcomeFile;
 
 	public void setWelcomeFile(String welcomeFile) {
 		this.welcomeFile = welcomeFile;
@@ -36,17 +42,60 @@ public class WebServer extends AbstractWebServer {
 		super(srvSockFactory, port, baseDir, numSocketReaders,
 				numRequestHandlers, sizeSocketQueue, sizeRequestQueue,
 				sessionTimeout);
-		// Add your code here
+		XMLParser parser = null;
+		try {
+			parser = new XMLParser();
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			WebServerLog.log(this, "XML Parser has thrown an exception");
+			e.printStackTrace();
+		}
+		this.extension2ContentType = parser.getMimeTypes();
+		this.filters = parser.getFilterWrappers();
+
+		socketsQueue = new LinkedBlockingQueue<>(sizeSocketQueue);
+		requestsQueue = new LinkedBlockingQueue<>(sizeRequestQueue);
+
+		socketReaders = new LinkedList<SocketReader>();
+		for (int i = 0; i < numSocketReaders; i++) {
+			SocketReader reader = new SocketReader(socketsQueue, requestsQueue,
+					baseDir);
+			socketReaders.add(reader);
+		}
+		requestHandlers = new LinkedList<RequestHandler>();
+		for (int i = 0; i < numRequestHandlers; i++) {
+			RequestHandler handler = new RequestHandler(requestsQueue,
+					extension2ContentType, filters, baseDir);
+			requestHandlers.add(handler);
+		}
+
 	}
 
 	@Override
 	public void bind() throws IOException {
-		// Add your code here
+		serverSocket = srvSockFactory.createServerSocket(port);
 	}
 
 	@Override
 	public void start() {
-		// Add your code here
+		for (SocketReader reader : socketReaders) {
+			reader.start();
+		}
+		for (RequestHandler handler : requestHandlers) {
+			handler.start();
+		}
+
+		try {
+			while (true) {
+				Socket clientSock = serverSocket.accept();
+				if (socketsQueue.offer(clientSock)) {
+					continue;
+				}
+				// TODO send back an error
+			}
+		} catch (IOException e) {
+			System.err.println("Server has encountered an error. exiting.");
+			e.printStackTrace();
+		}
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -58,4 +107,18 @@ public class WebServer extends AbstractWebServer {
 		server.start();
 
 	}
+
+	private Map<String, String> extension2ContentType;
+
+	private List<SimpleFilterWrapper> filters;
+
+	private String welcomeFile;
+
+	private List<SocketReader> socketReaders;
+	private LinkedBlockingQueue<Socket> socketsQueue;
+
+	private List<RequestHandler> requestHandlers;
+	private LinkedBlockingQueue<RequestObject> requestsQueue;
+
+	private ServerSocket serverSocket;
 }
