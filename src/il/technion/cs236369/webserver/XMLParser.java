@@ -5,8 +5,12 @@
 package il.technion.cs236369.webserver;
 
 
+import il.technion.cs236369.webserver.simplefilter.SimpleFilterWrapper;
+
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -46,6 +50,36 @@ public class XMLParser
 	}
 
 
+	public List<SimpleFilterWrapper> getFilterWrappers()
+	{
+		final List<SimpleFilterWrapper> $ = new ArrayList<>();
+
+		NodeList nl;
+
+		try
+		{
+			nl =
+				(NodeList) xpath
+					.compile("//simple-filters/simple-filter")
+					.evaluate(doc, XPathConstants.NODESET);
+			
+			System.out.println(nl.getLength());
+			
+			for (int i = 0; i < nl.getLength(); i++)
+			{
+				System.out.println(nl.item(i).getTextContent());
+			}
+			
+		} catch (final XPathExpressionException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return $;
+	}
+	
+	
 	@SuppressWarnings("nls")
 	Map<String, String> getMimeTypes()
 	{
@@ -58,8 +92,6 @@ public class XMLParser
 				(NodeList) xpath.compile("//mime/mime-mapping").evaluate(
 					doc,
 					XPathConstants.NODESET);
-
-			System.out.println(nl.getLength());
 
 			for (int i = 0; i < nl.getLength(); ++i)
 			{
