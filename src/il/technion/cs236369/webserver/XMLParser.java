@@ -5,13 +5,17 @@
 package il.technion.cs236369.webserver;
 
 
+import il.technion.cs236369.webserver.simplefilter.SimpleFilter;
 import il.technion.cs236369.webserver.simplefilter.SimpleFilterWrapper;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -22,6 +26,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -55,6 +60,11 @@ public class XMLParser
 		final List<SimpleFilterWrapper> $ = new ArrayList<>();
 
 		NodeList nl;
+		Node className;
+		SimpleFilter filter = null;
+		NodeList childNode;
+		Set<String> urls = null;
+		SimpleFilterWrapper filterWrapper;
 
 		try
 		{
@@ -62,15 +72,39 @@ public class XMLParser
 				(NodeList) xpath
 					.compile("//simple-filters/simple-filter")
 					.evaluate(doc, XPathConstants.NODESET);
-			
+
 			System.out.println(nl.getLength());
-			
+
 			for (int i = 0; i < nl.getLength(); i++)
 			{
-				System.out.println(nl.item(i).getTextContent());
+				className = nl.item(i).getAttributes().getNamedItem("class");
+
+				filter =
+					(SimpleFilter) Class
+						.forName(className.toString())
+						.getConstructor()
+						.newInstance();
+
+				childNode = nl.item(i).getChildNodes();
+				for (int j = 0; j < childNode.getLength(); j++)
+				{
+					urls = new HashSet<>();
+					urls.add(childNode.item(j).getTextContent());
+				}
 			}
-			
-		} catch (final XPathExpressionException e)
+
+			filterWrapper = new SimpleFilterWrapper(filter, urls);
+			$.add(filterWrapper);
+
+		} catch (final
+			XPathExpressionException
+			| InstantiationException
+			| IllegalAccessException
+			| IllegalArgumentException
+			| InvocationTargetException
+			| NoSuchMethodException
+			| SecurityException
+			| ClassNotFoundException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -78,8 +112,8 @@ public class XMLParser
 
 		return $;
 	}
-	
-	
+
+
 	@SuppressWarnings("nls")
 	Map<String, String> getMimeTypes()
 	{
@@ -109,9 +143,9 @@ public class XMLParser
 		}
 		return $;
 	}
-	
-	
-	
+
+
+
 	XPath xpath;
 
 	Document doc;
