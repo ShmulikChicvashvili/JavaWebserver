@@ -14,7 +14,7 @@ public class FilterChainImpl implements FilterChain {
 
 	@Override
 	public void doFilter(HttpRequest request, HttpResponse response) {
-		while (index <= filters.size()) {
+		while (index < filters.size()) {
 			final SimpleFilterWrapper filterWrapper = filters.get(index);
 			index++;
 			if (filterWrapper.isMatching(url)) {
@@ -25,6 +25,7 @@ public class FilterChainImpl implements FilterChain {
 	}
 
 	public void reset(String url) {
+		//FIXME check if we should get w/ or w/o base directory
 		this.url = url;
 		index = 0;
 	}
