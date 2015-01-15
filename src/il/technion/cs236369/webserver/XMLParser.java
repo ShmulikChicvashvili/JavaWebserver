@@ -4,6 +4,7 @@
 
 package il.technion.cs236369.webserver;
 
+
 import il.technion.cs236369.webserver.simplefilter.SimpleFilter;
 import il.technion.cs236369.webserver.simplefilter.SimpleFilterWrapper;
 
@@ -29,15 +30,22 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+
+
+
 /**
  * @author Shmulik
  *
  */
-public class XMLParser {
-	public XMLParser() throws ParserConfigurationException, SAXException,
-			IOException {
-		final DocumentBuilderFactory docFactory = DocumentBuilderFactory
-				.newInstance();
+public class XMLParser
+{
+	public XMLParser()
+		throws ParserConfigurationException,
+		SAXException,
+		IOException
+	{
+		final DocumentBuilderFactory docFactory =
+			DocumentBuilderFactory.newInstance();
 		docFactory.setNamespaceAware(true);
 		final DocumentBuilder builder = docFactory.newDocumentBuilder();
 		doc = builder.parse("config.xml");
@@ -46,7 +54,9 @@ public class XMLParser {
 		xpath = xpathFactory.newXPath();
 	}
 
-	public List<SimpleFilterWrapper> getFilterWrappers() {
+
+	public List<SimpleFilterWrapper> getFilterWrappers()
+	{
 		final List<SimpleFilterWrapper> $ = new ArrayList<>();
 
 		NodeList nl;
@@ -56,30 +66,44 @@ public class XMLParser {
 		Set<String> urls = null;
 		SimpleFilterWrapper filterWrapper;
 
-		try {
-			nl = (NodeList) xpath.compile("//simple-filters/simple-filter")
+		try
+		{
+			nl =
+				(NodeList) xpath
+					.compile("//simple-filters/simple-filter")
 					.evaluate(doc, XPathConstants.NODESET);
 
-			for (int i = 0; i < nl.getLength(); i++) {
+			for (int i = 0; i < nl.getLength(); i++)
+			{
 				className = nl.item(i).getAttributes().getNamedItem("class");
 
-				filter = (SimpleFilter) Class
+				filter =
+					(SimpleFilter) Class
 						.forName(className.getNodeValue().toString())
-						.getConstructor().newInstance();
+						.getConstructor()
+						.newInstance();
 
 				childNode = nl.item(i).getChildNodes();
-				for (int j = 0; j < childNode.getLength(); j++) {
-					urls = new HashSet<>();
-					urls.add(childNode.item(j).getTextContent());
+				urls = new HashSet<>();
+				for (int j = 0; j < childNode.getLength(); j++)
+				{
+					final String url = childNode.item(j).getTextContent();
+					urls.add(url);
 				}
 				filterWrapper = new SimpleFilterWrapper(filter, urls);
 				$.add(filterWrapper);
 			}
 
-		} catch (final XPathExpressionException | InstantiationException
-				| IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException | NoSuchMethodException
-				| SecurityException | ClassNotFoundException e) {
+		} catch (final
+			XPathExpressionException
+			| InstantiationException
+			| IllegalAccessException
+			| IllegalArgumentException
+			| InvocationTargetException
+			| NoSuchMethodException
+			| SecurityException
+			| ClassNotFoundException e)
+		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -87,29 +111,38 @@ public class XMLParser {
 		return $;
 	}
 
+
 	@SuppressWarnings("nls")
-	Map<String, String> getMimeTypes() {
+	Map<String, String> getMimeTypes()
+	{
 		final Map<String, String> $ = new HashMap<>();
 
 		NodeList nl;
-		try {
-			nl = (NodeList) xpath.compile("//mime/mime-mapping").evaluate(doc,
+		try
+		{
+			nl =
+				(NodeList) xpath.compile("//mime/mime-mapping").evaluate(
+					doc,
 					XPathConstants.NODESET);
 
-			for (int i = 0; i < nl.getLength(); ++i) {
-				final String extension = xpath.compile("./extension").evaluate(
-						nl.item(i));
-				final String mime_type = xpath.compile("./mime-type").evaluate(
-						nl.item(i));
+			for (int i = 0; i < nl.getLength(); ++i)
+			{
+				final String extension =
+					xpath.compile("./extension").evaluate(nl.item(i));
+				final String mime_type =
+					xpath.compile("./mime-type").evaluate(nl.item(i));
 				$.put(extension, mime_type);
 			}
 
-		} catch (final XPathExpressionException e) {
+		} catch (final XPathExpressionException e)
+		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return $;
 	}
+
+
 
 	XPath xpath;
 
