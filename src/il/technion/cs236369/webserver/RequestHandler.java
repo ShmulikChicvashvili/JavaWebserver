@@ -1,6 +1,4 @@
-
 package il.technion.cs236369.webserver;
-
 
 import il.technion.cs236369.webserver.simplefilter.FilterChain;
 import il.technion.cs236369.webserver.simplefilter.FilterChainImpl;
@@ -8,10 +6,14 @@ import il.technion.cs236369.webserver.simplefilter.SimpleFilterWrapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpRequest;
@@ -21,6 +23,7 @@ import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
@@ -28,147 +31,158 @@ import org.apache.http.protocol.HttpProcessor;
 import org.apache.http.protocol.HttpProcessorBuilder;
 import org.apache.http.protocol.ResponseContent;
 
+public class RequestHandler extends Thread {
 
-
-
-public class RequestHandler extends Thread
-{
-	
-	public RequestHandler(
-		LinkedBlockingQueue<RequestObject> requestsQueue,
-		Map<String, String> extension2contentType,
-		List<SimpleFilterWrapper> filters,
-		String baseDir)
-	{
+	public RequestHandler(LinkedBlockingQueue<RequestObject> requestsQueue,
+			Map<String, String> extension2contentType,
+			List<SimpleFilterWrapper> filters, String baseDir) {
 		super();
 		this.requestsQueue = requestsQueue;
 		this.extension2contentType = extension2contentType;
 		filterChain = new FilterChainImpl(filters);
 		this.baseDir = baseDir;
 	}
-	
-	
+
 	@Override
-	public void run()
-	{
-		proc =
-			HttpProcessorBuilder
-				.create()
-				.add(new ResponseContent())
-				.add(new HttpResponseInterceptor()
-				{
-					
+	public void run() {
+		proc = HttpProcessorBuilder.create().add(new ResponseContent())
+				.add(new HttpResponseInterceptor() {
+
 					@Override
-					public void process(
-						HttpResponse response,
-						HttpContext context) throws HttpException, IOException
-					{
-						if (response.containsHeader(HttpHeaders.CONNECTION))
-						{
+					public void process(HttpResponse response,
+							HttpContext context) throws HttpException,
+							IOException {
+						if (response.containsHeader(HttpHeaders.CONNECTION)) {
 							response.removeHeaders(HttpHeaders.CONNECTION);
 						}
 						response.addHeader(HttpHeaders.CONNECTION, "close");
 					}
-				})
-				.build();
+				}).build();
 		WebServerLog.log(this, "Request handler has started running");
-		
-		while (true)
-		{
-			try
-			{
+
+		while (true) {
+			try {
 				final RequestObject reqObj = requestsQueue.take();
 				WebServerLog.log(this, "Request handler got a new request");
-				
+
 				handleRequest(reqObj);
-				
+
 				reqObj.getConn().shutdown();
-			} catch (final InterruptedException e)
-			{
+			} catch (final InterruptedException e) {
 				WebServerLog.log(this, "Request handler was interrupted");
 				e.printStackTrace();
-			} catch (final IOException e)
-			{
-				WebServerLog.log(
-					this,
-					"Request handler failed to close connection");
+			} catch (final IOException e) {
+				WebServerLog.log(this,
+						"Request handler failed to close connection");
 				e.printStackTrace();
 			}
 		}
-		
+
 	}
-	
-	
-	private void handleRequest(RequestObject reqObj)
-	{
+
+	private void handleRequest(RequestObject reqObj) {
+		final Path path = reqObj.getPath();
 		final HttpServerConnection conn = reqObj.getConn();
 		final HttpRequest req = reqObj.getRequest();
-		WebServerLog.log(
-			this,
-			"Request handler got a request:\n" + req.toString());
-		
-		final HttpResponse response =
-			new BasicHttpResponse(
-				HttpVersion.HTTP_1_1,
-				HttpStatus.SC_OK,
-				ReasonPhrases.OK);
-		
-		WebServerLog.log(this, "Request handler checking file: "
-			+ reqObj.getPath().toString());
-		final File file = new File(reqObj.getPath().toString());
-		FileEntity entity = null;
-		if (!file.exists())
-		{
-			WebServerLog.log(this, "File "
-				+ reqObj.getPath().toString()
-				+ " Does not exist");
-			response.setStatusCode(HttpStatus.SC_NOT_FOUND);
 
-			final File notFound = new File(baseDir + "\\not_found.html");
-			entity = new FileEntity(notFound);
+		WebServerLog.log(this,
+				"Request handler got a request:\n" + req.toString());
 
-		} else
-		{
-			entity = new FileEntity(file);
-		}
-		
-		response.setEntity(entity);
-		
-		try
-		{
+		final HttpResponse response = new BasicHttpResponse(
+				HttpVersion.HTTP_1_1, HttpStatus.SC_OK, ReasonPhrases.OK);
+
+		boolean applyFilters;
+		applyFilters = handleFileRequest(path, response);
+
+		try {
 			proc.process(response, new BasicHttpContext());
-		} catch (HttpException | IOException e1)
-		{
-			WebServerLog.log(
-				this,
-				"Request handler failed to 'process' response");
+		} catch (HttpException | IOException e1) {
+			WebServerLog.log(this,
+					"Request handler failed to 'process' response");
 			e1.printStackTrace();
 		}
-		
+
+		if (applyFilters) {
+			// TODO fix call to filterChain
+			filterChain.reset(path.toString());
+			filterChain.doFilter(reqObj.getRequest(), response);
+		}
 		WebServerLog.log(this, "Request handler is sending a response:\n"
-			+ response.toString());
-		
-		try
-		{
+				+ response.toString());
+
+		try {
 			conn.sendResponseEntity(response);
-		} catch (HttpException | IOException e)
-		{
-			WebServerLog.log(
-				this,
-				"Request handler has encountered error while sending response");
+		} catch (HttpException | IOException e) {
+			WebServerLog
+					.log(this,
+							"Request handler has encountered error while sending response");
 			e.printStackTrace();
 		}
 	}
-	
-	
-	
+
+	private boolean handleFileRequest(Path path, final HttpResponse response) {
+		WebServerLog.log(this,
+				"Request handler checking file: " + path.toString());
+
+		final File file = new File(path.toString());
+		HttpEntity entity = null;
+
+		// bad request
+		if (!path.startsWith(baseDir) || !file.exists() || !file.canRead()) {
+			WebServerLog.log(this, "File " + path.toString() + " is invalid");
+			response.setStatusCode(HttpStatus.SC_NOT_FOUND);
+			// TODO reasons phrase?
+
+			entity = createNotFoundEntity();
+			response.setEntity(entity);
+			return false;
+		}
+
+		assert (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK);
+		WebServerLog.log(this, "File " + path.toString()
+				+ " is locked and loaded!! THIS IS SPARTA!");
+		if (file.isDirectory()) {
+			// directory request
+			// FIXME the directory content should conform to some standard.
+			String s = "";
+			for (String fileName : file.list()) {
+				s += fileName + "\n";
+			}
+			try {
+				entity = new StringEntity(s);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else {
+			// file request
+			entity = new FileEntity(file);
+		}
+		response.setEntity(entity);
+
+		return file.isFile();
+	}
+
+	private HttpEntity createNotFoundEntity() {
+		HttpEntity entity = null;
+		try {
+			entity = new FileEntity(new File(getClass().getResource(
+					"not_found.html").toURI()));
+		} catch (URISyntaxException e) {
+			WebServerLog.log(this,
+					"Request handler failed to load not found file");
+			e.printStackTrace();
+		}
+		return entity;
+	}
+
 	private final String baseDir;
-	
+
 	private final LinkedBlockingQueue<RequestObject> requestsQueue;
-	
+
 	private final Map<String, String> extension2contentType;
-	
-	private final FilterChain filterChain;
-	
+
+	private final FilterChainImpl filterChain;
+
 	private HttpProcessor proc;
 }

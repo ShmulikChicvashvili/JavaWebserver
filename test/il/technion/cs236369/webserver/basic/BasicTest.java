@@ -28,7 +28,7 @@ import com.google.inject.Injector;
  */
 public class BasicTest {
 
-	private final static String requestedURL = "/index.html";
+	private final static String requestedURL = "http://localhost:8080/blabla/index.html";
 
 	private static WebServerTestModule module;
 	private static ResponseExpectingSocket clientToServerSocket1;
