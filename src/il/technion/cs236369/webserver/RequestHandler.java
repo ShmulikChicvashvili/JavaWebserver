@@ -4,6 +4,7 @@ import il.technion.cs236369.webserver.simplefilter.FilterChain;
 import il.technion.cs236369.webserver.simplefilter.FilterChainImpl;
 import il.technion.cs236369.webserver.simplefilter.SimpleFilterWrapper;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.entity.FileEntity;
 import org.apache.http.message.BasicHttpResponse;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
@@ -38,6 +40,19 @@ public class RequestHandler extends Thread {
 
 	@Override
 	public void run() {
+		proc = HttpProcessorBuilder.create().add(new ResponseContent())
+				.add(new HttpResponseInterceptor() {
+
+					@Override
+					public void process(HttpResponse response,
+							HttpContext context) throws HttpException,
+							IOException {
+						if (response.containsHeader(HttpHeaders.CONNECTION)) {
+							response.removeHeaders(HttpHeaders.CONNECTION);
+						}
+						response.addHeader(HttpHeaders.CONNECTION, "close");
+					}
+				}).build();
 		WebServerLog.log(this, "Request handler has started running");
 
 		while (true) {
@@ -45,15 +60,15 @@ public class RequestHandler extends Thread {
 				RequestObject reqObj = requestsQueue.take();
 				WebServerLog.log(this, "Request handler got a new request");
 
-//				handleRequest(reqObj);
+				handleRequest(reqObj);
 
 				reqObj.getConn().shutdown();
 			} catch (InterruptedException e) {
-				WebServerLog.log(this, "Socket reader was interrupted");
+				WebServerLog.log(this, "Request handler was interrupted");
 				e.printStackTrace();
 			} catch (IOException e) {
 				WebServerLog.log(this,
-						"Socket reader failed to close connection");
+						"Request handler failed to close connection");
 				e.printStackTrace();
 			}
 		}
@@ -69,19 +84,17 @@ public class RequestHandler extends Thread {
 		HttpResponse response = new BasicHttpResponse(HttpVersion.HTTP_1_1,
 				HttpStatus.SC_OK, ReasonPhrases.OK);
 
-		final HttpProcessor proc = HttpProcessorBuilder.create()
-				.add(new ResponseContent()).add(new HttpResponseInterceptor() {
-
-					@Override
-					public void process(HttpResponse response,
-							HttpContext context) throws HttpException,
-							IOException {
-						if (response.containsHeader(HttpHeaders.CONNECTION)) {
-							response.removeHeaders(HttpHeaders.CONNECTION);
-						}
-						response.addHeader(HttpHeaders.CONNECTION, "close");
-					}
-				}).build();
+		WebServerLog.log(this,
+				"Request handler checking file: " + reqObj.getPath().toString());
+		File file = new File(reqObj.getPath().toString());
+		if (!file.exists()) {
+			WebServerLog.log(this, "File " + reqObj.getPath().toString()
+					+ " Does not exist");
+			response.setStatusCode(HttpStatus.SC_NOT_FOUND);
+		} else {
+			FileEntity entity = new FileEntity(file);
+			response.setEntity(entity);
+		}
 		try {
 			proc.process(response, new BasicHttpContext());
 		} catch (HttpException | IOException e1) {
@@ -110,4 +123,6 @@ public class RequestHandler extends Thread {
 	private Map<String, String> extension2contentType;
 
 	private FilterChain filterChain;
+
+	private HttpProcessor proc;
 }
