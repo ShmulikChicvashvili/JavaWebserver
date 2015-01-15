@@ -12,23 +12,39 @@ import org.apache.http.HttpResponse;
 
 public class FilterChainImpl implements FilterChain
 {
-	
+
 	public FilterChainImpl(List<SimpleFilterWrapper> filters)
 	{
 		this.filters = filters;
 		index = 0;
 	}
-	
-	
+
+
 	@Override
 	public void doFilter(HttpRequest request, HttpResponse response)
 	{
-		// SimpleFilter filter = filters.get(index);
+		while (index <= filters.size())
+		{
+			final SimpleFilterWrapper filterWrapper = filters.get(index);
+			if (filterWrapper.isMatching(url))
+			{
+				filterWrapper.doFilter(request, response, this);
+			}
+			index++;
+		}
+	}
+	
+	
+	public void setUrl(String url)
+	{
+		this.url = url;
 	}
 	
 	
 	
+	private String url;
+
 	private final List<SimpleFilterWrapper> filters;
-	
-	private final int index;
+
+	private int index;
 }
