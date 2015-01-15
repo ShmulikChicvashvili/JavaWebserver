@@ -63,7 +63,8 @@ public class XMLParser {
 			for (int i = 0; i < nl.getLength(); i++) {
 				className = nl.item(i).getAttributes().getNamedItem("class");
 
-				filter = (SimpleFilter) Class.forName(className.toString())
+				filter = (SimpleFilter) Class
+						.forName(className.getNodeValue().toString())
 						.getConstructor().newInstance();
 
 				childNode = nl.item(i).getChildNodes();
