@@ -12,14 +12,14 @@ import org.apache.http.HttpResponse;
 
 public class FilterChainImpl implements FilterChain
 {
-
+	
 	public FilterChainImpl(List<SimpleFilterWrapper> filters)
 	{
 		this.filters = filters;
 		index = 0;
 	}
-
-
+	
+	
 	@Override
 	public void doFilter(HttpRequest request, HttpResponse response)
 	{
@@ -33,18 +33,19 @@ public class FilterChainImpl implements FilterChain
 			index++;
 		}
 	}
-	
-	
-	public void setUrl(String url)
+
+
+	public void reset(String url)
 	{
 		this.url = url;
+		index = 0;
 	}
-	
-	
-	
+
+
+
 	private String url;
-
+	
 	private final List<SimpleFilterWrapper> filters;
-
+	
 	private int index;
 }
