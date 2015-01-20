@@ -202,7 +202,8 @@ public class RequestHandler extends Thread
 				extension = path.toString().substring(i + 1);
 			}
 			System.err.println(extension);
-			
+			// TODO make sure a response always has this header. Filter might
+			// erase it
 			final String contentType = extension2contentType.get(extension);
 			response.addHeader(HTTP.CONTENT_TYPE, contentType);
 		}
@@ -218,6 +219,8 @@ public class RequestHandler extends Thread
 		final HttpServerConnection conn = reqObj.getConn();
 		final HttpRequest req = reqObj.getRequest();
 		
+		// TODO: If its POST request ignore it
+
 		WebServerLog.log(
 			this,
 			"Request handler got a request:\n" + req.toString());
@@ -230,17 +233,6 @@ public class RequestHandler extends Thread
 		
 		boolean applyFilters;
 		applyFilters = handleFileRequest(path, response);
-		
-		try
-		{
-			proc.process(response, new BasicHttpContext());
-		} catch (HttpException | IOException e1)
-		{
-			WebServerLog.log(
-				this,
-				"Request handler failed to 'process' response");
-			e1.printStackTrace();
-		}
 		
 		if (applyFilters)
 		{

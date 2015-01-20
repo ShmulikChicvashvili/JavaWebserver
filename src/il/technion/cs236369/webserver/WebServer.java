@@ -29,7 +29,7 @@ import com.google.inject.name.Named;
 
 public class WebServer extends AbstractWebServer
 {
-
+	
 	public static void main(String[] args) throws Exception
 	{
 		final Properties p = new Properties();
@@ -38,10 +38,10 @@ public class WebServer extends AbstractWebServer
 		final IWebServer server = inj.getInstance(WebServer.class);
 		server.bind();
 		server.start();
-
+		
 	}
-
-
+	
+	
 	@Inject
 	public WebServer(
 		ServerSocketFactory srvSockFactory,
@@ -63,7 +63,7 @@ public class WebServer extends AbstractWebServer
 			sizeSocketQueue,
 			sizeRequestQueue,
 			sessionTimeout);
-
+		
 		XMLParser parser = null;
 		try
 		{
@@ -76,13 +76,13 @@ public class WebServer extends AbstractWebServer
 		System.out.println("HASDASODP");
 		extension2ContentType = parser.getMimeTypes();
 		System.out.println("HASDASODP");
-
+		
 		filters = parser.getFilterWrappers();
 		System.out.println("HASDASODP");
-
+		
 		socketsQueue = new LinkedBlockingQueue<>(sizeSocketQueue);
 		requestsQueue = new LinkedBlockingQueue<>(sizeRequestQueue);
-
+		
 		socketReaders = new LinkedList<SocketReader>();
 		for (int i = 0; i < numSocketReaders; i++)
 		{
@@ -101,28 +101,29 @@ public class WebServer extends AbstractWebServer
 					baseDir);
 			requestHandlers.add(handler);
 		}
-
+		
 	}
-
-
+	
+	
 	@Override
 	public void bind() throws IOException
 	{
 		WebServerLog.log(this, "Server is binding");
 		serverSocket = srvSockFactory.createServerSocket(port);
 	}
-	
-	
+
+
 	// TODO use this somewhere somehow
 	public void setWelcomeFile(String welcomeFile)
 	{
 		this.welcomeFile = welcomeFile;
 	}
-
-
+	
+	
 	@Override
 	public void start()
 	{
+		// TODO: Check it with two filters
 		WebServerLog.log(this, "Server has started");
 		for (final SocketReader reader : socketReaders)
 		{
@@ -132,7 +133,7 @@ public class WebServer extends AbstractWebServer
 		{
 			handler.start();
 		}
-
+		
 		try
 		{
 			while (true)
@@ -150,22 +151,22 @@ public class WebServer extends AbstractWebServer
 			e.printStackTrace();
 		}
 	}
-
-
-
+	
+	
+	
 	private final Map<String, String> extension2ContentType;
-
+	
 	private final List<SimpleFilterWrapper> filters;
-
+	
 	private String welcomeFile;
-
+	
 	private final List<SocketReader> socketReaders;
-
+	
 	private final LinkedBlockingQueue<Socket> socketsQueue;
-
+	
 	private final List<RequestHandler> requestHandlers;
-
+	
 	private final LinkedBlockingQueue<RequestObject> requestsQueue;
-
+	
 	private ServerSocket serverSocket;
 }
