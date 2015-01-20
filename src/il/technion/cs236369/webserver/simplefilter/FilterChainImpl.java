@@ -38,7 +38,6 @@ public class FilterChainImpl implements FilterChain
 
 	public void reset(String url)
 	{
-		// FIXME check if we should get w/ or w/o base directory
 		this.url = url;
 		index = 0;
 	}

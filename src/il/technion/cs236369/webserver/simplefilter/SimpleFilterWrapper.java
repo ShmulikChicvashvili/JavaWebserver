@@ -32,7 +32,6 @@ public class SimpleFilterWrapper
 	
 	public boolean isMatching(String url)
 	{
-		// FIXME seriously... fix me
 		if (url.contains("."))
 		{
 			final String extension = url.substring(url.lastIndexOf("."));

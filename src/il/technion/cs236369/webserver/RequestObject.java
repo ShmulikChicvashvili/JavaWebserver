@@ -11,20 +11,18 @@ import org.apache.http.HttpServerConnection;
 public class RequestObject {
 
 	public RequestObject(HttpServerConnection conn, HttpRequest request,
-			String baseDir) {
+			String baseDir, String welcomeFile) throws URISyntaxException {
 		super();
 		this.conn = conn;
 		this.request = request;
 		URI uri = null;
-		try {
-			uri = new URI(request.getRequestLine().getUri());
-		} catch (URISyntaxException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+		uri = new URI(request.getRequestLine().getUri());
 		System.out.println("Request object with URI = " + uri.toString());
 
 		path = Paths.get(baseDir, uri.getPath());
+		if (path.equals(Paths.get(baseDir))) {
+			path = Paths.get(baseDir, welcomeFile);
+		}
 		System.out.println("Request object created path = " + path.toString());
 	}
 
