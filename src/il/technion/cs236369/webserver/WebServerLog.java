@@ -7,6 +7,7 @@ public class WebServerLog {
 	private static PrintStream _out = System.out;
 
 	public static synchronized void log(Object obj, String message) {
+		System.err.flush();
 		_out.println("---------------------------");
 		_out.print(obj.getClass().getName());
 		_out.println(" [" + new java.util.Date() + "]:");

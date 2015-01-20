@@ -21,6 +21,7 @@ import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.HttpServerConnection;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.message.BasicHttpResponse;
@@ -81,7 +82,6 @@ public class RequestHandler extends Thread {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	private void buildProcessor() {
@@ -110,7 +110,7 @@ public class RequestHandler extends Thread {
 		HttpEntity entity = null;
 		try {
 			entity = new FileEntity(new File(getClass().getResource(
-					"not_found.html").toURI()));
+					"not_found.html").toURI()), ContentType.TEXT_HTML);
 		} catch (final URISyntaxException e) {
 			WebServerLog.log(this,
 					"Request handler failed to load not found file");
@@ -134,7 +134,6 @@ public class RequestHandler extends Thread {
 
 			entity = createNotFoundEntity();
 			response.setEntity(entity);
-			response.addHeader(HttpHeaders.CONTENT_TYPE, "text/html");
 			return false;
 		}
 
@@ -143,7 +142,6 @@ public class RequestHandler extends Thread {
 				+ " is locked and loaded!! THIS IS SPARTA!");
 		if (file.isDirectory()) {
 			// directory request
-			// XXX the directory content should conform to some standard.
 			String s = "Dir: " + path.toString() + "\n";
 			for (final String fileName : file.list()) {
 				s += fileName + "\n";
@@ -167,6 +165,13 @@ public class RequestHandler extends Thread {
 	}
 
 	private void addContentType(Path path, final HttpResponse response) {
+		if (response.getEntity() != null
+				&& response.getEntity().getContentType() != null) {
+			WebServerLog.log(this,
+					"Response entity already contains content type: "
+							+ response.getEntity().getContentType().getValue());
+			return;
+		}
 		if (response.containsHeader(HttpHeaders.CONTENT_TYPE)) {
 			response.removeHeaders(HttpHeaders.CONTENT_TYPE);
 		}

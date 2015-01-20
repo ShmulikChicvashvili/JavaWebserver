@@ -22,6 +22,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpResponseInterceptor;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
+import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.impl.DefaultBHttpServerConnection;
 import org.apache.http.impl.DefaultBHttpServerConnectionFactory;
@@ -180,7 +181,7 @@ public class WebServer extends AbstractWebServer {
 		String fileName = "service_unavailable.html";
 		String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
 		File file = new File(fileName);
-		FileEntity entity = new FileEntity(file);
+		FileEntity entity = new FileEntity(file, ContentType.TEXT_HTML);
 
 		response.setEntity(entity);
 		assert (extension.equals("html"));
