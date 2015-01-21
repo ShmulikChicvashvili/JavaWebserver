@@ -142,7 +142,7 @@ public class RequestHandler extends Thread {
 				+ " is locked and loaded!! THIS IS SPARTA!");
 		if (file.isDirectory()) {
 			// directory request
-			String s = "Dir: " + path.toString() + "\n";
+			String s = "Directory " + path.toString() + ":\n";
 			for (final String fileName : file.list()) {
 				s += fileName + "\n";
 			}

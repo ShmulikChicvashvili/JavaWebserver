@@ -65,7 +65,10 @@ public class HttpClientForTesting {
 
 		try {
 
-			final String[] targets = { "http://localhost:8080/index.ht" };
+			final String[] targets = { "http://localhost:8080/index.html",
+					"http://localhost:8080", "/bla.txt", "/bla.html",
+					"http://localhost:8080/bla.html", "none_existing.html",
+					"/dir", "dir", "/dir/a" };
 
 			for (final String target : targets) {
 				if (!conn.isOpen()) {
@@ -86,7 +89,7 @@ public class HttpClientForTesting {
 
 				final HttpResponse response = httpexecutor.execute(request,
 						conn, coreContext);
-				System.out.println("Before processing response");
+				System.out.println("<< Before processing response");
 				for (final Header h : response.getAllHeaders()) {
 					System.out.println(h.toString());
 				}
@@ -96,20 +99,20 @@ public class HttpClientForTesting {
 				for (final Header h : response.getAllHeaders()) {
 					System.out.println(h.toString());
 				}
-				if (response.containsHeader("Content-Encoding")) {
-					final Header h = response
-							.getFirstHeader("Content-Encoding");
-					if (h.getValue().contains("gzip")) {
-						final String out = GZipSimpleFilter
-								.decompress(EntityUtils.toByteArray(response
-										.getEntity()));
-						System.out.println(out);
-					} else {
-						System.out.println(EntityUtils.toString(response
-								.getEntity()));
-						System.out.println("==============");
-					}
+				System.out.println("=====================");
+				if (response.containsHeader("Content-Encoding")
+						&& response.getFirstHeader("Content-Encoding")
+								.getValue().contains("gzip")) {
+					final String out = GZipSimpleFilter.decompress(EntityUtils
+							.toByteArray(response.getEntity()));
+					System.out.println(out);
+
+				} else {
+					System.out.println(EntityUtils.toString(response
+							.getEntity()));
 				}
+				System.out.println("=====================");
+				System.out.println("");
 
 				if (!connStrategy.keepAlive(response, coreContext)) {
 					conn.close();
